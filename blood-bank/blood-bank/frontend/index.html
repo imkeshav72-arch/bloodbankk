@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Blood Bank Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --card: #161616;
+      --card2: #1f1f1f;
+      --border: rgba(255,255,255,0.08);
+      --red: #e11d48;
+      --red2: #fb7185;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --blue: #3b82f6;
+      --text: #f5f5f5;
+      --muted: #737373;
+      --font: 'DM Sans', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
+
+    /* SIDEBAR */
+    .sidebar {
+      position:fixed; left:0; top:0; width:230px; height:100vh;
+      background:var(--card); border-right:1px solid var(--border);
+      display:flex; flex-direction:column; z-index:100;
+    }
+    .logo {
+      padding:22px 20px; border-bottom:1px solid var(--border);
+    }
+    .logo h2 { font-size:1.05rem; font-weight:800; color:var(--red); display:flex; align-items:center; gap:8px; }
+    .logo p { font-size:0.72rem; color:var(--muted); margin-top:3px; }
+
+    .nav { padding:14px 10px; flex:1; }
+    .nav-item {
+      display:flex; align-items:center; gap:10px;
+      padding:11px 14px; border-radius:10px; cursor:pointer;
+      font-size:0.87rem; font-weight:500; color:var(--muted);
+      transition:all 0.2s; margin-bottom:3px;
+    }
+    .nav-item:hover { background:var(--card2); color:var(--text); }
+    .nav-item.active { background:rgba(225,29,72,0.15); color:var(--red2); }
+    .nav-item .icon { font-size:1.05rem; width:22px; text-align:center; }
+
+    /* MAIN */
+    .main { margin-left:230px; padding:26px; }
+    .page { display:none; animation:fadeIn 0.3s ease; }
+    .page.active { display:block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+    .page-header { margin-bottom:22px; }
+    .page-header h1 { font-size:1.55rem; font-weight:800; }
+    .page-header p { color:var(--muted); font-size:0.87rem; margin-top:4px; }
+
+    /* STATS */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+    .stat-card {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:14px; padding:18px 20px;
+    }
+    .stat-icon { font-size:1.5rem; margin-bottom:10px; }
+    .stat-label { font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px; }
+    .stat-value { font-size:1.8rem; font-weight:800; }
+    .c-red { color:var(--red); }
+    .c-green { color:var(--green); }
+    .c-yellow { color:var(--yellow); }
+    .c-blue { color:var(--blue); }
+
+    /* BLOOD STOCK */
+    .stock-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+    .stock-card {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:14px; padding:16px; text-align:center;
+      transition:transform 0.2s, border-color 0.2s;
+    }
+    .stock-card:hover { transform:translateY(-2px); border-color:rgba(225,29,72,0.4); }
+    .blood-group { font-size:1.5rem; font-weight:800; color:var(--red2); margin-bottom:6px; }
+    .stock-units { font-size:1.1rem; font-weight:700; color:var(--text); }
+    .stock-label { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+    .stock-bar { height:4px; background:var(--card2); border-radius:2px; margin-top:10px; overflow:hidden; }
+    .stock-bar-fill { height:100%; background:linear-gradient(90deg,var(--red),var(--red2)); border-radius:2px; transition:width 0.6s ease; }
+
+    /* CARD */
+    .card {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:16px; padding:22px; margin-bottom:18px;
+    }
+    .card-title { font-size:0.95rem; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+
+    /* FORM */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+    .form-group { display:flex; flex-direction:column; gap:6px; }
+    .form-group.full { grid-column:1/-1; }
+    label { font-size:0.77rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+    input, select, textarea {
+      background:var(--card2); border:1px solid var(--border);
+      color:var(--text); padding:10px 13px; border-radius:9px;
+      font-family:var(--font); font-size:0.88rem; outline:none;
+      transition:border-color 0.2s;
+    }
+    input:focus, select:focus { border-color:var(--red); }
+    select option { background:var(--card2); }
+
+    .btn {
+      padding:10px 20px; border:none; border-radius:9px;
+      font-family:var(--font); font-size:0.87rem; font-weight:600;
+      cursor:pointer; transition:all 0.2s;
+    }
+    .btn-primary { background:var(--red); color:#fff; }
+    .btn-primary:hover { background:#be123c; transform:translateY(-1px); }
+    .btn-success { background:var(--green); color:#fff; }
+    .btn-success:hover { background:#16a34a; }
+    .btn-sm { padding:5px 12px; font-size:0.75rem; }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--muted); }
+    .btn-outline:hover { border-color:var(--red); color:var(--red2); }
+    .btn-row { display:flex; gap:10px; margin-top:16px; }
+
+    /* TABLE */
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:0.86rem; }
+    thead tr { background:var(--card2); }
+    th { padding:11px 14px; text-align:left; font-size:0.74rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; white-space:nowrap; }
+    td { padding:12px 14px; border-top:1px solid var(--border); vertical-align:middle; }
+    tr:hover td { background:rgba(255,255,255,0.015); }
+
+    .badge {
+      display:inline-block; padding:3px 10px; border-radius:20px;
+      font-size:0.74rem; font-weight:600; white-space:nowrap;
+    }
+    .b-green { background:rgba(34,197,94,0.12); color:var(--green); }
+    .b-yellow { background:rgba(234,179,8,0.12); color:var(--yellow); }
+    .b-red { background:rgba(225,29,72,0.12); color:var(--red2); }
+    .b-blue { background:rgba(59,130,246,0.12); color:var(--blue); }
+
+    .bg-tag {
+      display:inline-block; padding:3px 9px; border-radius:6px;
+      font-size:0.82rem; font-weight:800;
+      background:rgba(225,29,72,0.15); color:var(--red2); letter-spacing:0.5px;
+    }
+
+    .search-bar { margin-bottom:14px; }
+    .search-bar input { width:100%; max-width:340px; }
+    .empty-state { text-align:center; padding:36px; color:var(--muted); font-size:0.88rem; }
+
+    /* TOAST */
+    .toast {
+      position:fixed; bottom:22px; right:22px; z-index:999;
+      background:#1a1a1a; border:1px solid var(--border); border-radius:12px;
+      padding:13px 18px; font-size:0.87rem; font-weight:500;
+      transform:translateY(80px); opacity:0; transition:all 0.3s;
+    }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast.success { border-color:rgba(34,197,94,0.4); color:var(--green); }
+    .toast.error { border-color:rgba(225,29,72,0.4); color:var(--red2); }
+
+    @media(max-width:900px) {
+      .stats-grid, .stock-grid { grid-template-columns:1fr 1fr; }
+      .form-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">
+    <h2>🩸 BloodBank</h2>
+    <p>Management System</p>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('stock')">
+      <span class="icon">🩸</span> Blood Stock
+    </div>
+    <div class="nav-item" onclick="showPage('donors')">
+      <span class="icon">👤</span> Donors
+    </div>
+    <div class="nav-item" onclick="showPage('donations')">
+      <span class="icon">💉</span> Donations
+    </div>
+    <div class="nav-item" onclick="showPage('requests')">
+      <span class="icon">📋</span> Blood Requests
+    </div>
+    <div class="nav-item" onclick="showPage('addDonor')">
+      <span class="icon">➕</span> Add Donor
+    </div>
+    <div class="nav-item" onclick="showPage('addRequest')">
+      <span class="icon">🆘</span> Request Blood
+    </div>
+  </nav>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Blood Bank overview and statistics</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👤</div>
+        <div class="stat-label">Total Donors</div>
+        <div class="stat-value c-red" id="stat-donors">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🩸</div>
+        <div class="stat-label">Available Units</div>
+        <div class="stat-value c-green" id="stat-units">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div class="stat-label">Pending Requests</div>
+        <div class="stat-value c-yellow" id="stat-pending">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💉</div>
+        <div class="stat-label">Total Donations</div>
+        <div class="stat-value c-blue" id="stat-donations">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🩸 Blood Group Stock Overview</div>
+      <div class="stock-grid" id="dashboard-stock"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Recent Blood Requests</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Patient</th><th>Blood Group</th><th>Units</th><th>Hospital</th><th>Date</th><th>Status</th></tr>
+          </thead>
+          <tbody id="recent-requests-body">
+            <tr><td colspan="7" class="empty-state">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOOD STOCK -->
+  <div class="page" id="page-stock">
+    <div class="page-header">
+      <h1>Blood Stock</h1>
+      <p>Available units by blood group</p>
+    </div>
+    <div class="stock-grid" id="stock-grid-full"></div>
+    <div class="card">
+      <div class="card-title">💉 Add Donation to Stock</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Select Donor</label>
+          <select id="don-donor"></select>
+        </div>
+        <div class="form-group">
+          <label>Blood Group</label>
+          <select id="don-bg">
+            <option value="">Select</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Units (ml / bags)</label>
+          <input type="number" id="don-units" placeholder="e.g. 450"/>
+        </div>
+        <div class="form-group">
+          <label>Donation Date</label>
+          <input type="date" id="don-date"/>
+        </div>
+        <div class="form-group">
+          <label>Camp / Location</label>
+          <input type="text" id="don-camp" placeholder="e.g. City Hospital Camp"/>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="don-status">
+            <option value="Available">Available</option>
+            <option value="Used">Used</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="addDonation()">💾 Record Donation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DONORS -->
+  <div class="page" id="page-donors">
+    <div class="page-header">
+      <h1>Donors</h1>
+      <p>All registered blood donors</p>
+    </div>
+    <div class="card">
+      <div class="card-title">👤 Donor List</div>
+      <div class="search-bar">
+        <input type="text" id="donor-search" placeholder="🔍 Search by name or blood group..." oninput="filterDonors()"/>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Name</th><th>Age</th><th>Gender</th><th>Blood Group</th><th>Phone</th><th>Last Donated</th><th>Registered</th><th>Action</th></tr>
+          </thead>
+          <tbody id="donors-body">
+            <tr><td colspan="9" class="empty-state">No donors yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- DONATIONS -->
+  <div class="page" id="page-donations">
+    <div class="page-header">
+      <h1>Donations</h1>
+      <p>All donation records</p>
+    </div>
+    <div class="card">
+      <div class="card-title">💉 Donation Records</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Donor</th><th>Blood Group</th><th>Units</th><th>Camp</th><th>Date</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody id="donations-body">
+            <tr><td colspan="8" class="empty-state">No records yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOOD REQUESTS -->
+  <div class="page" id="page-requests">
+    <div class="page-header">
+      <h1>Blood Requests</h1>
+      <p>Manage patient blood requests</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 All Requests</div>
+      <div class="search-bar">
+        <input type="text" id="req-search" placeholder="🔍 Search by patient or hospital..." oninput="filterRequests()"/>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Patient</th><th>Age</th><th>Blood Group</th><th>Units</th><th>Hospital</th><th>Contact</th><th>Reason</th><th>Date</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody id="requests-body">
+            <tr><td colspan="11" class="empty-state">No requests yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD DONOR -->
+  <div class="page" id="page-addDonor">
+    <div class="page-header">
+      <h1>Add Donor</h1>
+      <p>Register a new blood donor</p>
+    </div>
+    <div class="card">
+      <div class="card-title">👤 Donor Registration</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="d-name" placeholder="e.g. Ramesh Kumar"/>
+        </div>
+        <div class="form-group">
+          <label>Age *</label>
+          <input type="number" id="d-age" placeholder="18-65"/>
+        </div>
+        <div class="form-group">
+          <label>Gender *</label>
+          <select id="d-gender">
+            <option value="">Select</option>
+            <option>Male</option><option>Female</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Blood Group *</label>
+          <select id="d-bg">
+            <option value="">Select</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Phone *</label>
+          <input type="text" id="d-phone" placeholder="9876543210"/>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="d-email" placeholder="donor@email.com"/>
+        </div>
+        <div class="form-group">
+          <label>Last Donated Date</label>
+          <input type="date" id="d-last"/>
+        </div>
+        <div class="form-group full">
+          <label>Address</label>
+          <input type="text" id="d-address" placeholder="City, State"/>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="addDonor()">✅ Register Donor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REQUEST BLOOD -->
+  <div class="page" id="page-addRequest">
+    <div class="page-header">
+      <h1>Request Blood</h1>
+      <p>Submit a new blood request for a patient</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🆘 New Blood Request</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Patient Name *</label>
+          <input type="text" id="r-name" placeholder="e.g. Priya Sharma"/>
+        </div>
+        <div class="form-group">
+          <label>Patient Age</label>
+          <input type="number" id="r-age" placeholder="e.g. 35"/>
+        </div>
+        <div class="form-group">
+          <label>Blood Group Required *</label>
+          <select id="r-bg">
+            <option value="">Select</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Units Required *</label>
+          <input type="number" id="r-units" placeholder="e.g. 2"/>
+        </div>
+        <div class="form-group">
+          <label>Hospital Name *</label>
+          <input type="text" id="r-hospital" placeholder="e.g. Apollo Hospital"/>
+        </div>
+        <div class="form-group">
+          <label>Contact Number *</label>
+          <input type="text" id="r-contact" placeholder="9876543210"/>
+        </div>
+        <div class="form-group">
+          <label>Request Date *</label>
+          <input type="date" id="r-date"/>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="r-status">
+            <option value="Pending">Pending</option>
+            <option value="Fulfilled">Fulfilled</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Reason / Diagnosis</label>
+          <input type="text" id="r-reason" placeholder="e.g. Surgery, Accident, Thalassemia..."/>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="addRequest()">🆘 Submit Request</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://localhost:5000';
+let allDonors = [], allRequests = [], allDonations = [];
+
+const pages = ['dashboard','stock','donors','donations','requests','addDonor','addRequest'];
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item')[pages.indexOf(name)].classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'stock') { loadStock(); loadDonorDropdown('don-donor'); }
+  if (name === 'donors') loadDonors();
+  if (name === 'donations') loadDonations();
+  if (name === 'requests') loadRequests();
+  if (name === 'addRequest') document.getElementById('r-date').value = today();
+  if (name === 'addDonor') {}
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function badge(status) {
+  const map = { Available:'b-green', Pending:'b-yellow', Fulfilled:'b-green', Cancelled:'b-red', Used:'b-red', Partial:'b-blue' };
+  return `<span class="badge ${map[status]||'b-blue'}">${status}</span>`;
+}
+
+function bgTag(bg) { return `<span class="bg-tag">${bg}</span>`; }
+
+// ─── DASHBOARD ─────────────────────────────
+async function loadDashboard() {
+  try {
+    const [stats, stock, reqs] = await Promise.all([
+      fetch(API+'/stats').then(r=>r.json()),
+      fetch(API+'/stock').then(r=>r.json()),
+      fetch(API+'/requests').then(r=>r.json())
+    ]);
+    document.getElementById('stat-donors').textContent = stats.total_donors;
+    document.getElementById('stat-units').textContent = stats.available_units + ' units';
+    document.getElementById('stat-pending').textContent = stats.pending_requests;
+    document.getElementById('stat-donations').textContent = stats.total_donations;
+
+    renderStockCards('dashboard-stock', stock);
+
+    const tbody = document.getElementById('recent-requests-body');
+    const recent = reqs.slice(0,8);
+    if (!recent.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No requests yet.</td></tr>'; return; }
+    tbody.innerHTML = recent.map((r,i) => `<tr>
+      <td>${i+1}</td><td><b>${r.patient_name}</b></td>
+      <td>${bgTag(r.blood_group)}</td><td>${r.units}</td>
+      <td>${r.hospital}</td><td>${r.request_date}</td><td>${badge(r.status)}</td>
+    </tr>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+// ─── STOCK ─────────────────────────────────
+function renderStockCards(containerId, stock) {
+  const groups = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+  const maxUnits = Math.max(...groups.map(g => stock[g]?.units || 0), 1);
+  document.getElementById(containerId).innerHTML = groups.map(g => {
+    const s = stock[g] || {units:0, donations:0};
+    const pct = Math.min((s.units / maxUnits) * 100, 100);
+    return `<div class="stock-card">
+      <div class="blood-group">${g}</div>
+      <div class="stock-units">${s.units} <small style="font-size:0.7rem;color:var(--muted)">units</small></div>
+      <div class="stock-label">${s.donations} donation(s)</div>
+      <div class="stock-bar"><div class="stock-bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+async function loadStock() {
+  const stock = await fetch(API+'/stock').then(r=>r.json());
+  renderStockCards('stock-grid-full', stock);
+}
+
+// ─── DONORS ────────────────────────────────
+async function loadDonors() {
+  allDonors = await fetch(API+'/donors').then(r=>r.json());
+  renderDonors(allDonors);
+}
+
+function renderDonors(list) {
+  const tbody = document.getElementById('donors-body');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No donors found.</td></tr>'; return; }
+  tbody.innerHTML = list.map((d,i) => `<tr>
+    <td>${i+1}</td><td><b>${d.name}</b></td><td>${d.age}</td><td>${d.gender}</td>
+    <td>${bgTag(d.blood_group)}</td><td>${d.phone}</td>
+    <td>${d.last_donated || '—'}</td><td>${d.registered_on || '—'}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="deleteDonor(${d.id})">Delete</button></td>
+  </tr>`).join('');
+}
+
+function filterDonors() {
+  const q = document.getElementById('donor-search').value.toLowerCase();
+  renderDonors(allDonors.filter(d => d.name.toLowerCase().includes(q) || d.blood_group.toLowerCase().includes(q)));
+}
+
+async function addDonor() {
+  const name=document.getElementById('d-name').value.trim();
+  const age=document.getElementById('d-age').value;
+  const gender=document.getElementById('d-gender').value;
+  const blood_group=document.getElementById('d-bg').value;
+  const phone=document.getElementById('d-phone').value.trim();
+  const email=document.getElementById('d-email').value.trim();
+  const address=document.getElementById('d-address').value.trim();
+  const last_donated=document.getElementById('d-last').value;
+
+  if (!name||!age||!gender||!blood_group||!phone) { toast('Fill all required fields!','error'); return; }
+
+  const res = await fetch(API+'/donors', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({name,age,gender,blood_group,phone,email,address,last_donated})
+  });
+  const data = await res.json();
+  if (res.ok) {
+    toast('Donor registered!');
+    ['d-name','d-age','d-email','d-phone','d-address'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('d-gender').value='';
+    document.getElementById('d-bg').value='';
+    document.getElementById('d-last').value='';
+  } else toast(data.error||'Error','error');
+}
+
+async function deleteDonor(id) {
+  if (!confirm('Delete this donor?')) return;
+  await fetch(API+'/donors/'+id, {method:'DELETE'});
+  toast('Donor deleted!');
+  loadDonors();
+}
+
+// ─── DONATIONS ─────────────────────────────
+async function loadDonations() {
+  allDonations = await fetch(API+'/donations').then(r=>r.json());
+  const tbody = document.getElementById('donations-body');
+  if (!allDonations.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No donations yet.</td></tr>'; return; }
+  tbody.innerHTML = allDonations.map((d,i) => `<tr>
+    <td>${i+1}</td><td><b>${d.donor_name}</b><br><small style="color:var(--muted)">${d.phone}</small></td>
+    <td>${bgTag(d.blood_group)}</td><td>${d.units} units</td>
+    <td>${d.camp||'—'}</td><td>${d.donation_date}</td>
+    <td>${badge(d.status)}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="deleteDonation(${d.id})">Delete</button></td>
+  </tr>`).join('');
+}
+
+async function deleteDonation(id) {
+  if (!confirm('Delete this record?')) return;
+  await fetch(API+'/donations/'+id, {method:'DELETE'});
+  toast('Deleted!');
+  loadDonations();
+}
+
+async function loadDonorDropdown(selId) {
+  const donors = await fetch(API+'/donors').then(r=>r.json());
+  const sel = document.getElementById(selId);
+  sel.innerHTML = '<option value="">-- Select Donor --</option>' +
+    donors.map(d=>`<option value="${d.id}">${d.name} (${d.blood_group})</option>`).join('');
+  document.getElementById('don-date').value = today();
+}
+
+async function addDonation() {
+  const donor_id=document.getElementById('don-donor').value;
+  const blood_group=document.getElementById('don-bg').value;
+  const units=document.getElementById('don-units').value;
+  const donation_date=document.getElementById('don-date').value;
+  const camp=document.getElementById('don-camp').value;
+  const status=document.getElementById('don-status').value;
+
+  if (!donor_id||!blood_group||!units||!donation_date) { toast('Fill all required fields!','error'); return; }
+
+  const res = await fetch(API+'/donations', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({donor_id,blood_group,units,donation_date,camp,status})
+  });
+  const data = await res.json();
+  if (res.ok) {
+    toast('Donation recorded!');
+    document.getElementById('don-units').value='';
+    document.getElementById('don-camp').value='';
+    loadStock();
+  } else toast(data.error||'Error','error');
+}
+
+// ─── REQUESTS ──────────────────────────────
+async function loadRequests() {
+  allRequests = await fetch(API+'/requests').then(r=>r.json());
+  renderRequests(allRequests);
+}
+
+function renderRequests(list) {
+  const tbody = document.getElementById('requests-body');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="11" class="empty-state">No requests found.</td></tr>'; return; }
+  tbody.innerHTML = list.map((r,i) => `<tr>
+    <td>${i+1}</td><td><b>${r.patient_name}</b></td><td>${r.age||'—'}</td>
+    <td>${bgTag(r.blood_group)}</td><td>${r.units}</td>
+    <td>${r.hospital}</td><td>${r.contact}</td>
+    <td>${r.reason||'—'}</td><td>${r.request_date}</td>
+    <td>${badge(r.status)}</td>
+    <td style="display:flex;gap:6px;flex-wrap:wrap">
+      <select onchange="updateReqStatus(${r.id},this.value)" style="font-size:0.76rem;padding:4px 8px;border-radius:7px;background:var(--card2);color:var(--text);border:1px solid var(--border)">
+        <option ${r.status==='Pending'?'selected':''}>Pending</option>
+        <option ${r.status==='Fulfilled'?'selected':''}>Fulfilled</option>
+        <option ${r.status==='Cancelled'?'selected':''}>Cancelled</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="deleteRequest(${r.id})">✕</button>
+    </td>
+  </tr>`).join('');
+}
+
+function filterRequests() {
+  const q = document.getElementById('req-search').value.toLowerCase();
+  renderRequests(allRequests.filter(r =>
+    r.patient_name.toLowerCase().includes(q) || r.hospital.toLowerCase().includes(q) || r.blood_group.toLowerCase().includes(q)
+  ));
+}
+
+async function updateReqStatus(id, status) {
+  await fetch(API+'/requests/'+id, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({status})
+  });
+  toast('Status updated to ' + status);
+}
+
+async function deleteRequest(id) {
+  if (!confirm('Delete this request?')) return;
+  await fetch(API+'/requests/'+id, {method:'DELETE'});
+  toast('Request deleted!');
+  loadRequests();
+}
+
+async function addRequest() {
+  const patient_name=document.getElementById('r-name').value.trim();
+  const age=document.getElementById('r-age').value;
+  const blood_group=document.getElementById('r-bg').value;
+  const units=document.getElementById('r-units').value;
+  const hospital=document.getElementById('r-hospital').value.trim();
+  const contact=document.getElementById('r-contact').value.trim();
+  const request_date=document.getElementById('r-date').value;
+  const status=document.getElementById('r-status').value;
+  const reason=document.getElementById('r-reason').value.trim();
+
+  if (!patient_name||!blood_group||!units||!hospital||!contact||!request_date) { toast('Fill all required fields!','error'); return; }
+
+  const res = await fetch(API+'/requests', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({patient_name,age,blood_group,units,hospital,contact,request_date,status,reason})
+  });
+  const data = await res.json();
+  if (res.ok) {
+    toast('Blood request submitted!');
+    ['r-name','r-age','r-units','r-hospital','r-contact','r-reason'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('r-bg').value='';
+    document.getElementById('r-date').value=today();
+  } else toast(data.error||'Error','error');
+}
+
+// Init
+loadDashboard();
+</script>
+</body>
+</html>
